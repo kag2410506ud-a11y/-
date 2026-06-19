@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>陸上タイム表示モニター</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background: #1e1e1e;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            border: 2px solid #00ffcc;
+        }
+        h1 {
+            font-size: 24px;
+            color: #aaaaaa;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        .time-display {
+            font-size: 80px;
+            font-weight: bold;
+            color: #00ffcc;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 20px 0;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+        .status {
+            font-size: 14px;
+            color: #888888;
+        }
+        .connected { color: #00ff88; }
+        .disconnected { color: #ff3366; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>TRACK & FIELD TIME</h1>
+        <div class="time-display" id="time">00:00.00</div>
+        <div class="status">状態: <span id="status" class="disconnected">切断中</span></div>
+    </div>
+
+    <script>
+        // --- 設定 ---
+        // ESP32のIPアドレスを設定してください（例: 192.168.1.100）
+        const esp32_ip = "192.168.1.100"; 
+        
+        // WebSocketの初期化
+        const ws = new WebSocket(`ws://${esp32_ip}:81`);
+        
+        const timeDisplay = document.getElementById('time');
+        const statusDisplay = document.getElementById('status');
+
+        // ESP32に接続できたとき
+        ws.onopen = () => {
+            statusDisplay.innerText = "接続完了";
+            statusDisplay.className = "status connected";
+            console.log("ESP32に接続しました");
+        };
+
+        // ESP32からデータ（タイム）を受信したとき
+        ws.onmessage = (event) => {
+            // 受信したデータを画面に反映
+            timeDisplay.innerText = event.data;
+        };
+
+        // 接続が切れたとき
+        ws.onclose = () => {
+            statusDisplay.innerText = "切断中 (再読み込みしてください)";
+            statusDisplay.className = "status disconnected";
+            console.log("ESP32との接続が切れました");
+        };
+
+        // エラーが発生したとき
+        ws.onerror = (error) => {
+            console.error("エラーが発生しました:", error);
+        };
+    </script>
+</body>
+</html>

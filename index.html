@@ -4,91 +4,136 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>陸上タイム表示モニター</title>
+
     <style>
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: #121212;
-            color: #ffffff;
+            color: white;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
+            align-items: center;
             height: 100vh;
             margin: 0;
         }
+
         .container {
             text-align: center;
             background: #1e1e1e;
             padding: 40px;
             border-radius: 15px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
             border: 2px solid #00ffcc;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
+
         h1 {
-            font-size: 24px;
             color: #aaaaaa;
-            margin-bottom: 10px;
             letter-spacing: 2px;
         }
+
         .time-display {
             font-size: 80px;
-            font-weight: bold;
+            font-family: "Courier New", monospace;
             color: #00ffcc;
-            font-family: 'Courier New', Courier, monospace;
             margin: 20px 0;
-            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            text-shadow: 0 0 10px rgba(0,255,204,0.5);
         }
+
         .status {
-            font-size: 14px;
-            color: #888888;
+            margin-bottom: 20px;
         }
-        .connected { color: #00ff88; }
-        .disconnected { color: #ff3366; }
+
+        .connected {
+            color: #00ff88;
+        }
+
+        .disconnected {
+            color: #ff3366;
+        }
+
+        button{
+            padding:12px 30px;
+            font-size:18px;
+            background:#00ffcc;
+            color:black;
+            border:none;
+            border-radius:8px;
+            cursor:pointer;
+            font-weight:bold;
+        }
+
+        button:hover{
+            background:#00ddaa;
+        }
+
+        button:disabled{
+            background:#555;
+            color:#999;
+            cursor:not-allowed;
+        }
     </style>
 </head>
+
 <body>
 
-    <div class="container">
-        <h1>TRACK & FIELD TIME</h1>
-        <div class="time-display" id="time">00:00.00</div>
-        <div class="status">状態: <span id="status" class="disconnected">切断中</span></div>
+<div class="container">
+
+    <h1>TRACK & FIELD TIME</h1>
+
+    <div class="time-display" id="time">00:00.00</div>
+
+    <div class="status">
+        状態：
+        <span id="status" class="disconnected">切断中</span>
     </div>
 
-    <script>
-        // --- 設定 ---
-        // ESP32のIPアドレスを設定してください（例: 192.168.1.100）
-        const esp32_ip = "192.168.1.100"; 
-        
-        // WebSocketの初期化
-        const ws = new WebSocket(`ws://${esp32_ip}:81`);
-        
-        const timeDisplay = document.getElementById('time');
-        const statusDisplay = document.getElementById('status');
+    <button id="connectBtn">接続</button>
 
-        // ESP32に接続できたとき
-        ws.onopen = () => {
+</div>
+
+<script>
+
+    // ESP32のIPアドレス
+    const esp32_ip = "192.168.1.100";
+
+    let ws = null;
+
+    const timeDisplay = document.getElementById("time");
+    const statusDisplay = document.getElementById("status");
+    const connectBtn = document.getElementById("connectBtn");
+
+    connectBtn.onclick = function () {
+
+        ws = new WebSocket(`ws://${esp32_ip}:81`);
+
+        ws.onopen = function () {
             statusDisplay.innerText = "接続完了";
-            statusDisplay.className = "status connected";
+            statusDisplay.className = "connected";
+            connectBtn.disabled = true;
             console.log("ESP32に接続しました");
         };
 
-        // ESP32からデータ（タイム）を受信したとき
-        ws.onmessage = (event) => {
-            // 受信したデータを画面に反映
+        ws.onmessage = function (event) {
             timeDisplay.innerText = event.data;
         };
 
-        // 接続が切れたとき
-        ws.onclose = () => {
-            statusDisplay.innerText = "切断中 (再読み込みしてください)";
-            statusDisplay.className = "status disconnected";
-            console.log("ESP32との接続が切れました");
+        ws.onclose = function () {
+            statusDisplay.innerText = "切断中";
+            statusDisplay.className = "disconnected";
+            connectBtn.disabled = false;
+            console.log("接続が切れました");
         };
 
-        // エラーが発生したとき
-        ws.onerror = (error) => {
-            console.error("エラーが発生しました:", error);
+        ws.onerror = function (error) {
+            console.log(error);
+            statusDisplay.innerText = "接続失敗";
+            statusDisplay.className = "disconnected";
+            connectBtn.disabled = false;
         };
-    </script>
+
+    };
+
+</script>
+
 </body>
 </html>
